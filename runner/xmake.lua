@@ -1,12 +1,10 @@
 add_rules("mode.debug", "mode.release")
+add_requires("jsoncpp 1.9.5","cpp-httplib 0.15.3")
 add_includedirs("./include")
-add_includedirs("$(projectdir)/../include")
 
 target("run")
     set_kind("binary")
     add_files("src/*.cpp")
-    set_rundir("$(projectdir)")
-
-
-
+    add_packages("jsoncpp")
+    set_rundir("$(projectdir)/runner")
 

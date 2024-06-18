@@ -14,10 +14,10 @@
 #include "util.hpp"
 #include "log.hpp"
 
-
 NAMESPACE_OJ_BEGIN
 
 
+using namespace util;
 /** @brief 执行编译服务，g++ -o {file_name} 
  *  
  *  @param file_name 不带后缀的文件名
@@ -32,9 +32,9 @@ bool compile(const std::string& file_name)
     }
 
     // 生存文件路径
-    std::string _src_path = path::get_src(file_name);
-    std::string _comp_err_path = path::get_comp_err(file_name);
-    std::string _elf_path = path::get_elf(file_name);
+    std::string _src_path = path::src(file_name);
+    std::string _comp_err_path = path::complie(file_name);
+    std::string _elf_path = path::elf(file_name);
     
 
     // 子进程
@@ -74,10 +74,10 @@ bool compile(const std::string& file_name)
     return false;
 }
 
-using namespace util;
 
 
 // 设置用户程序运行资源限制：时间和内存(KB)
+// 时间超限会收到信号 SIGXCPU ，内存超限会收到信号 SIGABRT
 bool set_limit(int time_limit,int mem_limit)
 {
     rlimit time;
@@ -119,10 +119,10 @@ bool set_limit(int time_limit,int mem_limit)
  */
 int run(const std::string& file_name,int time_limit,int mem_limit)
 {  
-    std::string _elf_path = path::get_elf(file_name);
-    std::string _stdin_path = path::get_stdin(file_name);
-    std::string _stdout_path = path::get_stdout(file_name);
-    std::string _err_path = path::get_err(file_name);
+    std::string _elf_path = path::elf(file_name);
+    std::string _stdin_path = path::in(file_name);
+    std::string _stdout_path = path::out(file_name);
+    std::string _err_path = path::err(file_name);
 
     // 打开运行程序的输出输入文件。
     umask(0);
@@ -173,10 +173,86 @@ int run(const std::string& file_name,int time_limit,int mem_limit)
     return (_ch_id & 0x7f); // successfully run
 }   
 
-void run_server(const std::string& file_name,int time_limit,int mem_limit)
+
+// 获得运行结果
+std::string get_out(int status,const std::string& file_name)
 {
-    compile(file_name);
-    run(file_name,time_limit,mem_limit);
+    Json::Value out_json;
+    out_json["status"] = status;
+    out_json["message"] = code_to_msg(status,file_name);
+    std::string __t;
+    if(status == 0)
+    {
+        file::read_file(path::out(file_name),__t);
+        out_json["stdout"] = __t;
+    }
+    else if(status == -7)
+    {
+        file::read_file(path::complie(file_name),__t);
+        out_json["complie_err"] = __t;
+    }
+    return Json::writeString(Json::StreamWriterBuilder(),out_json);
+}
+
+
+void clean(const std::string& file_name)
+{
+    // 清除运行时生成的文件
+    if(std::filesystem::exists(path::src(file_name)))
+        ::unlink(path::src(file_name).c_str());
+    if(std::filesystem::exists(path::elf(file_name)))
+        ::unlink(path::elf(file_name).c_str());
+    if(std::filesystem::exists(path::complie(file_name)))
+        ::unlink(path::complie(file_name).c_str());
+    if(std::filesystem::exists(path::err(file_name)))
+        ::unlink(path::err(file_name).c_str());
+    if(std::filesystem::exists(path::in(file_name)))
+        ::unlink(path::in(file_name).c_str());
+    if(std::filesystem::exists(path::out(file_name)))
+        ::unlink(path::out(file_name).c_str());
+}
+
+
+/**
+ * @param in_json 用户传入的 json 数据，{"code":"...","id":"id"}
+ * @param out_json 服务器返回运行结果 {status:int ,message:string,stdout:}。
+ */
+int run_server(const std::string& in,std::string& out)
+{
+    Json::Value in_json;
+    std::string file_name = file::unique_file();   // 生成文件名
+
+    if(!Json::Reader().parse(in,in_json))
+    {
+        out = get_out(-5,file_name); // -5 JSON 解析错误
+        return -5;
+    }
+
+    std::string code = in_json["code"].asString();
+    if(code.size() == 0)
+    {
+        out = get_out(-6,file_name); // -6 代码为空
+        return -6;
+    }
+
+    file::write_file(path::src(file_name),code);
+    file::write_file(path::in(file_name),"tmp");
+
+    if(!compile(file_name)) 
+    {
+        out = get_out(-7,file_name); // -7 编译错误
+        return -7; 
+    }
+    
+
+    int time_limit = in_json["time_limit"].asInt();
+    int mem_limit = in_json["mem_limit"].asInt();
+    // 返回运行结果
+    int ret = run(file_name,time_limit,mem_limit);
+    out = get_out(ret,file_name);
+
+    clean(file_name);
+    return ret;
 }
 
 NAMESPACE_OJ_END
