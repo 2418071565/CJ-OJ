@@ -1,11 +1,11 @@
 #pragma once
-
+#include <jsoncpp/json/json.h>
+#include <string>
+#include <iostream>
+#include <httplib.h>
 #include "init.hpp"
 #include "log.hpp"
 #include "util.hpp"
-#include <httplib.h>
-#include <jsoncpp/json/json.h>
-#include <string>
 #include "runner.hpp"
 
 NAMESPACE_OJ_BEGIN
@@ -14,21 +14,35 @@ class oj_server
 {
     httplib::Server Ser;
 public:
+
+    void login(const std::string& usr_data)
+    {
+
+    }
+
     oj_server()
     {
-        Ser.Get("/",[](const httplib::Request& req,httplib::Response rp)
+        Ser.Get("/",[](const httplib::Request& req,httplib::Response& rp)
         {
             
         });
 
-        Ser.Post("/",[](const httplib::Request& req,httplib::Response rp)
+        Ser.Post("/",[](const httplib::Request& req,httplib::Response& rp)
         {
             std::string res;
+            log(INFO) << "Post code data from" << req.remote_addr << std::endl;
             run_server(req.body,res);
             rp.set_content(res,"application/json");
         });
 
+        Ser.Post("/login",[](const httplib::Request& req,httplib::Response& rp)
+        {
+            log(INFO) << "Post usr login data from" << req.remote_addr << std::endl;
+            rp.set_content("Hello World","text/plain");
+        });
     }
+
+
 
     void daemon()
     {
@@ -57,6 +71,7 @@ public:
 
     void start()
     {
+        log(INFO) << "Server start in Port: 8888" << std::endl; 
         Ser.listen("0.0.0.0",8888);
     }
 };

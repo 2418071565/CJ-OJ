@@ -222,13 +222,18 @@ int run_server(const std::string& in,std::string& out)
     Json::Value in_json;
     std::string file_name = file::unique_file();   // 生成文件名
 
-    if(!Json::Reader().parse(in,in_json))
+    if((!Json::Reader().parse(in,in_json)) 
+                    or 
+        !(in_json.isMember("code") and 
+        in_json.isMember("time_limit") and 
+        in_json.isMember("mem_limit")))
     {
-        out = get_out(-5,file_name); // -5 JSON 解析错误
+        out = get_out(-5,file_name); // -5 JSON 格式错误
         return -5;
     }
 
     std::string code = in_json["code"].asString();
+
     if(code.size() == 0)
     {
         out = get_out(-6,file_name); // -6 代码为空

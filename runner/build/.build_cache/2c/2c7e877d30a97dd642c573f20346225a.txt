@@ -1,8 +1,0 @@
-{
-    errdata = "In file included from \27[01m\27[Kcompile_server.cpp:2\27[m\27[K:\
-\27[01m\27[Krunner.hpp:\27[m\27[K In function ‘\27[01m\27[Kint OJ::runner::run(const string&, int, int)\27[m\27[K’:\
-\27[01m\27[Krunner.hpp:104:14:\27[m\27[K \27[01;35m\27[Kwarning: \27[m\27[Knot enough variable arguments to fit a sentinel [\27[01;35m\27[K-Wformat=\27[m\27[K]\
-  104 |         \27[01;35m\27[Kexecl(_elf_path.c_str(),file_name.c_str())\27[m\27[K;\
-      |         \27[01;35m\27[K~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\27[m\27[K\
-"
-}

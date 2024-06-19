@@ -4,7 +4,6 @@
 #include <ctime>
 #include <mutex>
 #include "init.hpp"
-
 NAMESPACE_OJ_BEGIN
 
 enum
@@ -63,7 +62,5 @@ public:
 __LOG LOG;
 
 #define log(level) LOG(#level, __FILE__ , __LINE__)     // 输出日志消息
-
-
 
 NAMESPACE_OJ_END
