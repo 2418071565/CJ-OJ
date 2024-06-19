@@ -5,7 +5,7 @@
             class="el-menu-demo"
             mode="horizontal"
             text-color="rgb(0,0,0)"
-            active-text-color="#ffd04b"
+            active-text-color="rgb(255, 161, 22)"
             @select="handleSelect"
             router
             id="head-menu"
@@ -152,11 +152,12 @@ const registerForm = ref({
     font-weight: 500;
     box-sizing: border-box;
     padding-left: 30px;
+    outline: none;
 }
 .inputField:focus {
-    outline: none;
+    outline: auto;
     background-color: transparent;
-    border-bottom: 3px solid rgb(199, 114, 255);
+    border-bottom:none;
 }
 .submit{
     height: 40px;
@@ -167,8 +168,11 @@ const registerForm = ref({
     height: 100%;
     border-radius: 30px;
     outline: none;
+    border: none;
     font-size: 2em;
     font-family: Arial, Helvetica, sans-serif;
+    background-color: black;
+    color: white;
 }
 @keyframes formChange {
     0% {
@@ -185,7 +189,7 @@ const registerForm = ref({
     top: 0;
     height: 1000px;
     width: 100%;
-    background-color: rgba(241, 240, 240, 0.5);
+    background-color: rgba(241, 240, 240, 0.7);
 }
 .daytheme #head-menu {
     background-color: white;
