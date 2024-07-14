@@ -10,12 +10,11 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <jsoncpp/json/json.h>
-#include "init.hpp"
+#include "conf.hpp"
 #include "util.hpp"
 #include "log.hpp"
 
-NAMESPACE_OJ_BEGIN
-
+CJOJ_BEGIN
 
 using namespace util;
 /** @brief 执行编译服务，g++ -o {file_name} 
@@ -27,7 +26,7 @@ bool compile(const std::string& file_name)
     int _ch_id = fork();
     if(_ch_id < 0)
     {
-        log(ERROR) << "Compiler fork error." << std::endl;
+        LOG(ERROR,"Compiler fork error.\n");
         exit(-1);
     }
 
@@ -46,7 +45,7 @@ bool compile(const std::string& file_name)
         int _fd = open(_comp_err_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC,0664);
         if(_fd < 0)
         {
-            log(ERROR) << "Open error file failed." << std::endl;
+            LOG(ERROR,"Open error file failed.\n");
             exit(0);
         }
         dup2(_fd,2);
@@ -56,7 +55,7 @@ bool compile(const std::string& file_name)
 
 
         // 替换失败
-        log(ERROR) << "Exec g++ error." << std::endl;
+        LOG(ERROR, "Exec g++ error.\n");
         exit(0);
     }
 
@@ -67,10 +66,10 @@ bool compile(const std::string& file_name)
     // 检查是否生成可执行文件
     if(std::filesystem::exists(_elf_path))
     {
-        log(INFO) << "Compile successfully.\n";
+        LOG(INFO,"Compile successfully.\n");
         return true;
     }
-    log(WARNING) << "Compile file error: " + std::string(_src_path) << std::endl;
+    LOG(WARNING,"Compile file error: %s\n",_src_path.c_str());
     return false;
 }
 
@@ -85,7 +84,7 @@ bool set_limit(int time_limit,int mem_limit)
     time.rlim_max = RLIM_INFINITY;
     if(setrlimit(RLIMIT_CPU,&time) < 0)
     {
-        log(ERROR) << "Set time limits error." << std::endl;
+        LOG(ERROR,"Set time limits error.\n");
         return false;
     }
 
@@ -94,7 +93,7 @@ bool set_limit(int time_limit,int mem_limit)
     mem.rlim_max = RLIM_INFINITY;
     if(setrlimit(RLIMIT_DATA,&mem) < 0)
     {
-        log(ERROR) << "Set memory limits error." << std::endl;
+        LOG(ERROR,"Set memory limits error.\n");
         return false;
     }
     return true;
@@ -132,7 +131,7 @@ int run(const std::string& file_name,int time_limit,int mem_limit)
 
     if(_out_fd < 0 or _in_fd < 0 or _err_fd < 0)
     {
-        log(ERROR) << "Open file error" << std::endl;
+        LOG(ERROR,"Open file error\n");
         return -3; // open file error
     }
 
@@ -140,7 +139,7 @@ int run(const std::string& file_name,int time_limit,int mem_limit)
     pid_t _ch_id = fork();
     if(_ch_id < 0)
     {
-        log(ERROR) << "Runner fork error" << std::endl;
+        LOG(ERROR,"Runner fork error\n");
         return -1; // fork error
     }
 
@@ -153,14 +152,14 @@ int run(const std::string& file_name,int time_limit,int mem_limit)
 
         if(!set_limit(time_limit,mem_limit))
         {
-            log(WARNING) << "Set resources error" << std::endl;
+            LOG(WARNING,"Set resources error\n");
             return -4; // set resources error
         }
         // 执行用户代码
         execl(_elf_path.c_str(),file_name.c_str(),nullptr);
 
         // 替换失败
-        log(ERROR) << "Runner exec failed." << std::endl;
+        LOG(ERROR,"Runner exec failed.\n");
         return -2; // exec error
     }
 
@@ -168,7 +167,7 @@ int run(const std::string& file_name,int time_limit,int mem_limit)
     // 父进程
     waitpid(_ch_id,&_ch_id,0); // 阻塞等待
 
-    log(INFO) << "Run successfully, child get signal: " << (_ch_id & 0x7f) << std::endl;
+    LOG(INFO,"Run successfully, child get signal: %d\n",_ch_id & 0x7f); 
     // 返回子进程终止信号
     return (_ch_id & 0x7f); // successfully run
 }   
@@ -261,5 +260,4 @@ int run_server(const std::string& in,std::string& out)
 }
 
 
-
-NAMESPACE_OJ_END
+CJOJ_END

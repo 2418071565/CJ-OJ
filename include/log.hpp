@@ -3,34 +3,36 @@
 #include <iostream>
 #include <ctime>
 #include <mutex>
-#include "init.hpp"
-NAMESPACE_OJ_BEGIN
+#include <cstdarg>
+#include "conf.hpp"
 
-enum
-{
-    INFO,
-    DEGUB,
-    WARNING,
-    ERROR,
-    FATAL,
-};
-
+CJOJ_BEGIN
 /**
- * @brief 一个简单的日志系统。线程安全。 
+ * @brief 一个简单的日志系统。线程安全。向 stderr 输出日志。
  */
-class __LOG
+class logger
 {
+    std::mutex _log_mt;
+    logger() = default;
 public:
-    std::mutex _out_mt;
+    // 饿汉单例
+    static logger &get()
+    {
+        static logger *lg = new logger();
+        return *lg;
+    }
 
-    std::ostream& operator()(const std::string& _level,
-                        const std::string& _file,int _line) 
+    logger(const logger &) = delete;
+    logger &operator=(const logger &) = delete;
+
+    void write_log(const std::string &_level, const std::string &_file, int _line, const char *format, ...)
     {
         std::string _msg;
 
         // 获取时间戳，并格式化
         std::time_t __t = time(nullptr);
-        tm* _tm = gmtime(&__t);
+        tm *_tm = gmtime(&__t);
+        char _tm_buff[128];
         // struct tm
         // {
         //     int tm_sec;  /*秒，正常范围0-59， 但允许至61*/
@@ -43,24 +45,47 @@ public:
         //     int tm_yday; /*从今年1月1日到目前的天数，范围0-365*/
         //     int tm_isdst; /*日光节约时间的旗标*/
         // };
-        char _tm_buff[128];
-        snprintf(_tm_buff,sizeof(_tm_buff),"%d-%d-%d-%d:%d:%d",
-                _tm->tm_year + 1900/*年*/,_tm->tm_mon + 1/*月*/,
-                    _tm->tm_mday/*日*/,_tm->tm_hour/*小时*/,
-                        _tm->tm_min/*分钟*/,_tm->tm_sec/*秒*/);
+        snprintf(_tm_buff, sizeof(_tm_buff), "%d-%d-%d-%d:%d:%d",
+                 _tm->tm_year + 1900 /*年*/, _tm->tm_mon + 1 /*月*/,
+                 _tm->tm_mday /*日*/, _tm->tm_hour /*小时*/,
+                 _tm->tm_min /*分钟*/, _tm->tm_sec /*秒*/);
+        _msg = "[" + _level + "]" + "[ " + _file + "\t]" +
+               "[" + std::to_string(_line) + "]" + "[" + _tm_buff + "]: ";
 
-        _msg = "[" + _level + "]" + "[ " + _file + "\t]" + 
-                "[" + std::to_string(_line) + "]" + "[" + _tm_buff + "]: ";
+        char _log_buff[1024];
+
+        // 获取可变参数
+        va_list args;
+        va_start(args, format);
+        vsnprintf(_log_buff, sizeof(_log_buff), format, args); // 用 va_list 做参数，输出到 dest
+
+        _msg += _log_buff;
         {
-            std::unique_lock<std::mutex> lg(_out_mt);
-            std::cout << _msg;
+            std::lock_guard<std::mutex> lg(_log_mt);
+            std::cout << _msg << std::flush;
         }
-        return std::cout;
     }
 };
 
-__LOG LOG;
+logger &__log = logger::get();
 
-#define log(level) LOG(#level, __FILE__ , __LINE__)     // 输出日志消息
 
-NAMESPACE_OJ_END
+/**
+ * 输出日志消息
+ * 日志等级:
+ *  INFO
+    DEGUB
+    WARNING
+    ERROR
+    FATAL
+ */
+#define LOG(level, format, ...) __log.write_log(#level, __FILE__, __LINE__, format, ##__VA_ARGS__)
+enum
+{
+    INFO,
+    DEGUB,
+    WARNING,
+    ERROR,
+    FATAL,
+};
+CJOJ_END

@@ -11,10 +11,10 @@
 #include <signal.h>
 #include <atomic>
 #include "log.hpp"
-#include "init.hpp"
+#include "conf.hpp"
 
 
-NAMESPACE_OJ_BEGIN
+CJOJ_BEGIN
 
 namespace util
 { // namespace util begin
@@ -128,4 +128,4 @@ inline std::string code_to_msg(int code,const std::string& file_name)
 }   // namespace util end
 
 
-NAMESPACE_OJ_END
+CJOJ_END

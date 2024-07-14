@@ -2,6 +2,6 @@ add_includedirs("./include")
 
 target("oj")
     set_kind("binary")
-    add_files("src/*.cpp")
-    add_packages("jsoncpp","cpp-httplib")
+    add_files("src/*.cc")
+    add_packages("jsoncpp")
     set_rundir("$(projectdir)/oj_server")
