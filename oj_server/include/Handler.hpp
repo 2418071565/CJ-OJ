@@ -36,8 +36,9 @@ namespace handler
             // 将输出加入输入缓冲区
             __con->append_inbuff(__bf);
         }
+        
         // 将解析任务交给线程池
-        __con->get_reactor()->get_workers()->add_task(&http_req::decode,__con);
+        __con->get_reactor()->get_workers()->add_task(&httpServer::Serve,__con);
     }
 
     void send(const std::shared_ptr<Connection>& __con)

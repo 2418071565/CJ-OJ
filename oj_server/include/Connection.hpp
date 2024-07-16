@@ -22,6 +22,8 @@ class Connection
 {
     std::function<void()> _M_recv, _M_send;
     std::shared_ptr<tcp_sock> _M_sock;
+    Json::Value _M_request;
+    bool _M_handOver = false;
     mutable std::stringstream _M_inbuff     // 输入缓冲区
                             , _M_outbuff;   // 输出缓冲区
     uint32_t _M_events;
@@ -54,6 +56,12 @@ public:
     void append_outbuff(const std::string &__s) const noexcept { _M_outbuff << __s; }
     // 判断输出缓存区是否为空
     bool outbuff_empty() noexcept { return _M_outbuff.str().empty(); }
+
+    std::stringstream& outBuffer() noexcept { return _M_outbuff; }
+    std::stringstream& inBuffer() noexcept { return _M_inbuff; }
+    Json::Value& request() noexcept { return _M_request; }
+    bool isHandOver() noexcept { return _M_handOver; }
+    void setHandOver(bool val) noexcept { _M_handOver = val; }
 
 
     void recv() { _M_recv(); }
