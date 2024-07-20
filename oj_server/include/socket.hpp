@@ -59,7 +59,7 @@ public:
         return -1;
     }
 
-    int get_fd() const noexcept                 { return _M_fd;}
+    int fd() const noexcept                 { return _M_fd;}
     uint16_t get_port() const noexcept          { return _M_port; }
     const std::string& get_ip() const noexcept  { return _M_ip; }
     void close() { ::close(_M_fd); }

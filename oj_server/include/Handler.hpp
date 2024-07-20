@@ -17,19 +17,19 @@ namespace handler
         std::string __bf;
         for(;;)
         {
-            ssize_t n = __con->get_sock()->recv(__bf);
+            ssize_t n = __con->Sock()->recv(__bf);
             if(n < 0)
             {
                 if(errno == EAGAIN) // 
                     break;
                 if(errno == EINTR)
                     continue;
-                LOG(ERROR,"Recv error from [%s,%d] with errno(%d):%s\n",__con->get_sock()->get_ip().c_str(),__con->get_sock()->get_port(),errno,strerror(errno));
+                LOG(ERROR,"Recv error from [%s,%d] with errno(%d):%s\n",__con->Sock()->get_ip().c_str(),__con->Sock()->get_port(),errno,strerror(errno));
                 return;
             }
             if(n == 0)
             {
-                LOG(WARNING,"Socket[%s,%d] close\n",__con->get_sock()->get_ip(),__con->get_sock()->get_port());
+                LOG(WARNING,"Socket[%s,%d] close\n",__con->Sock()->get_ip(),__con->Sock()->get_port());
                 __con->get_reactor()->del_connection(__con);
                 return;
             }
@@ -37,13 +37,18 @@ namespace handler
             __con->append_inbuff(__bf);
         }
         
-        // 将解析任务交给线程池
-        __con->get_reactor()->get_workers()->add_task(&httpServer::Serve,__con);
+        // 解析并执行任务
+        httpServer::Serve(__con);
     }
 
     void send(const std::shared_ptr<Connection>& __con)
     {
-        LOG(DEGUB,"Handler::send\n");
+        std::string __bf;
+        std::stringstream& obf = __con->
+        for(;;)
+        {
+
+        }
     }
 }
 

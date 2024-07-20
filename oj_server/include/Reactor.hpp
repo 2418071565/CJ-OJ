@@ -106,21 +106,12 @@ class Reactor : public __vb
     // 创建守护进程
     void daemon()
     {
-        // 1. 忽略异常信号，保证守护进程不轻易退出
         signal(SIGPIPE, SIG_IGN);
         signal(SIGCHLD, SIG_IGN);
-        // 2. fork 创建子进程
         if (fork() > 0)
             exit(0); // 退出父进程，子进程变为孤儿进程
-
-        // 3. 创建新会话
         setsid();
-
-        // 4. 按照需求切换守护进程工作目录
         chdir("/");
-
-        // 5. 处理 stdin、stdout、stderr
-        // 使用 /dev/null，向该文件写入的所有数据都会被丢弃
         int fd = open("/dev/null", O_RDWR);
         dup2(fd, 0);
         dup2(fd, 1);
@@ -128,6 +119,7 @@ class Reactor : public __vb
     }
 
 public:
+
     Reactor()
         : is_running(false)
     { }
@@ -145,7 +137,7 @@ public:
             {
                 // accept 获取连接
                 auto sock = __lis_sock->accept();
-                if(sock->get_fd() < 0)
+                if(sock->fd() < 0)
                 {
                     if(errno == EAGAIN) break;
                     if(errno == EINTR) continue;
@@ -159,33 +151,32 @@ public:
                 __con->enroll_send(handler::send, std::weak_ptr<Connection>(__con));
                 this->add_connection(__con);
             }
-        }, __lis->get_sock());
+        }, __lis->Sock());
 
-        __lis->get_sock()->listen(que_len);
+        __lis->Sock()->listen(que_len);
         add_connection(__lis);
 
         LOG(INFO, "Reactor init successful\n");
-        LOG(INFO, "Server start in [%s,%d]\n", __lis->get_sock()->get_ip().c_str(), __lis->get_sock()->get_port());
+        LOG(INFO, "Server start in [%s,%d]\n", __lis->Sock()->get_ip().c_str(), __lis->Sock()->get_port());
     }
 
     // 添加链接
     void add_connection(const std::shared_ptr<Connection> &__con) noexcept
     {
-        _M_epoll->add(__con->get_sock()->get_fd(), __con->get_events());    // 添加连接到 epoller 中
-        _M_conn[__con->get_sock()->get_fd()] = __con;
+        _M_epoll->add(__con->Sock()->fd(), __con->get_events());    // 添加连接到 epoller 中
+        _M_conn[__con->Sock()->fd()] = __con;
     }
 
     // 删除连接
     void del_connection(const std::shared_ptr<Connection> &__con) noexcept
     {
-        _M_epoll->del(__con->get_sock()->get_fd()); // 从 epoller 中删除对应连接
-        _M_conn.erase(_M_conn.find(__con->get_sock()->get_fd()));
+        _M_epoll->del(__con->Sock()->fd()); // 从 epoller 中删除对应连接
+        _M_conn.erase(_M_conn.find(__con->Sock()->fd()));
     }
 
     std::unique_ptr<threadpool>& get_workers() noexcept { return _M_workers; }
-
-
     std::shared_ptr<Connection> &get_connection(int fd) noexcept { return _M_conn[fd]; }
+    virtual std::unique_ptr<epoller>& get_epoll() noexcept { return _M_epoll; }
 
     // 任务分发
     void dispatch()
@@ -197,10 +188,13 @@ public:
             return LOG(FATAL, "Epoller wait error\n"), void();
         for (int i = 0; i < n; ++i)
         {
-            if (_M_ready_tasks[i].events & EPOLLIN)
-                _M_conn[_M_ready_tasks[i].data.fd]->recv();
-            if (_M_ready_tasks[i].events & EPOLLOUT)
-                _M_conn[_M_ready_tasks[i].data.fd]->send();
+            int fd = _M_ready_tasks[i].data.fd;
+            uint32_t events = _M_ready_tasks[i].events;
+            auto& con = _M_conn[fd];
+            if (events & EPOLLIN)
+                _M_workers->add_task(&con->recv,con.get());
+            if (events & EPOLLOUT)
+                _M_workers->add_task(&con->send,con.get());
         }
     }
 

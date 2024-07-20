@@ -15,9 +15,12 @@ public:
 virtual void add_connection(const std::shared_ptr<Connection> &__con) = 0;
 virtual void del_connection(const std::shared_ptr<Connection> &__con) = 0;
 virtual std::unique_ptr<threadpool>& get_workers() = 0;
+virtual std::unique_ptr<epoller>& get_epoll() = 0;
 };
 class Reactor ;
 
+
+// 线程安全问题
 class Connection
 {
     std::function<void()> _M_recv, _M_send;
@@ -26,6 +29,7 @@ class Connection
     bool _M_handOver = false;
     mutable std::stringstream _M_inbuff     // 输入缓冲区
                             , _M_outbuff;   // 输出缓冲区
+    std::mutex _M_recvMt,_M_sendMt;
     uint32_t _M_events;
     mutable __vb *_M_reactor;
 
@@ -50,23 +54,53 @@ public:
         _M_send = std::move(__f);
     }
 
+    void enableRead() noexcept
+    {
+        if(_M_events & EPOLLIN)
+            return;
+        _M_events |= EPOLLIN;
+        _M_reactor->get_epoll()->modify(_M_sock->fd(),_M_events);
+    }
+
+    void enableWrite(bool fg) noexcept 
+    {
+       
+        if(fg)
+        {
+            if(_M_events & EPOLLOUT)
+                return;
+            _M_events |= EPOLLOUT;
+            _M_reactor->get_epoll()->modify(_M_sock->fd(),_M_events);
+        }
+        else 
+        {
+
+        }
+    }
+
     // 向输入缓冲区写入数据
     void append_inbuff(const std::string &__s) const noexcept { _M_inbuff << __s; }
+
     // 向输出缓冲区写入数据
-    void append_outbuff(const std::string &__s) const noexcept { _M_outbuff << __s; }
+    void append_outbuff(const std::string &__s) const noexcept 
+    {
+        _M_outbuff << __s;
+        enableWrite(true);  // 有数据就启动写关注
+    }
+
     // 判断输出缓存区是否为空
     bool outbuff_empty() noexcept { return _M_outbuff.str().empty(); }
 
-    std::stringstream& outBuffer() noexcept { return _M_outbuff; }
-    std::stringstream& inBuffer() noexcept { return _M_inbuff; }
     Json::Value& request() noexcept { return _M_request; }
+    void clearRequest() noexcept { _M_request.clear(); }
     bool isHandOver() noexcept { return _M_handOver; }
     void setHandOver(bool val) noexcept { _M_handOver = val; }
 
 
-    void recv() { _M_recv(); }
-    void send() { _M_send(); }
-    const std::shared_ptr<tcp_sock> &get_sock() const noexcept  { return _M_sock; }
+    void recv() { std::lock_guard<std::mutex> lg(_M_recvMt); _M_recv(); }
+    void send() { std::lock_guard<std::mutex> lg(_M_sendMt); _M_send(); }
+    
+    const std::shared_ptr<tcp_sock> &Sock() const noexcept  { return _M_sock; }
     __vb *get_reactor() const noexcept                          { return _M_reactor; }
     u_int32_t get_events() const noexcept                       { return _M_events; }
 };
@@ -80,10 +114,10 @@ public:
     static std::shared_ptr<Connection> createET_acceptor(const std::string &ip, uint16_t port, __vb *reactor, uint32_t events)
     {
         std::shared_ptr<Connection> __con(new Connection(std::make_shared<tcp_sock>(), reactor, events | EPOLLET));
-        __con->get_sock()->noblock();
+        __con->Sock()->noblock();
         int val = 1;
-        __con->get_sock()->set_opt(SOL_SOCKET,SO_REUSEADDR,&val,sizeof(val));
-        __con->get_sock()->bind(ip, port);
+        __con->Sock()->set_opt(SOL_SOCKET,SO_REUSEADDR,&val,sizeof(val));
+        __con->Sock()->bind(ip, port);
         return __con;
     }
 
@@ -91,7 +125,7 @@ public:
     static std::shared_ptr<Connection> createET(const std::shared_ptr<tcp_sock> &sock, __vb *reactor, u_int32_t events)
     {
         std::shared_ptr<Connection> __con(new Connection(sock, reactor, events | EPOLLET));
-        __con->get_sock()->noblock();
+        __con->Sock()->noblock();
         return __con;
     }
 };
