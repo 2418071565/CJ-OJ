@@ -1,4 +1,7 @@
 {
+    files = {
+        "oj_server/src/Main.cc"
+    },
     values = {
         "/usr/bin/gcc",
         {
@@ -13,9 +16,6 @@
             "-DNDEBUG"
         }
     },
-    depfiles_gcc = "Main.o: oj_server/src/Main.cc oj_server/include/OJServer.hpp  oj_server/include/threadpool.hpp include/conf.hpp include/log.hpp  oj_server/include/Reactor.hpp oj_server/include/socket.hpp  oj_server/include/Connection.hpp oj_server/include/Handler.hpp\
-",
-    files = {
-        "oj_server/src/Main.cc"
-    }
+    depfiles_gcc = "Main.o: oj_server/src/Main.cc oj_server/include/Reactor.hpp  oj_server/include/socket.hpp include/log.hpp include/conf.hpp  oj_server/include/Connection.hpp oj_server/include/threadpool.hpp  oj_server/include/epoller.hpp oj_server/include/Handler.hpp  oj_server/include/http.hpp\
+"
 }

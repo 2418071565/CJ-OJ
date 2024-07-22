@@ -73,7 +73,7 @@ public:
             p_cv.wait(ul,
                 [this]() {return this->is_over or !(this->max_task == this->tasks.size()); }
             );
-            if (is_over)return std::future<int>();
+            if (is_over)return std::future<ret_type>();
 
             tasks.push_back([task]() {(*task)(); });
         }

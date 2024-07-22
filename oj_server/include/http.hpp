@@ -12,7 +12,7 @@ class httpRequest
 public:
     // 解析 http 请求
     // 返回 0 正确解析，-1 数据不完整
-    int decode(const std::shared_ptr<Connection>& __con)
+    static int decode(const std::shared_ptr<Connection>& __con)
     {
         std::stringstream& ibf = __con->inBuffer(); // 输入缓冲区
         Json::Value& req = __con->request();    // 上次解析到一半的 http 报文
@@ -28,7 +28,7 @@ readContent:
             while((!ibf.eof()) and cont.size() < contLen)
             {
                 char buff[1024] = { 0 };
-                ibf.read(buff,min(sizeof(buff) - 1,contLen - cont.size()));
+                ibf.read(buff,std::min(sizeof(buff) - 1,contLen - cont.size()));
                 cont += buff;
             }
             req["Content"] = cont;
@@ -71,7 +71,7 @@ readContent:
                 // 如果有数据，就读取数据
                 if(req.isMember("Content-Length"))
                 {
-                    __con->setHandlOver(true);
+                    __con->setHandOver(true);
                     req["Content"] = "";
                     goto readContent;
                 }
@@ -173,7 +173,7 @@ class httpRespone
 public:
     // 生成响应头
     httpRespone(const std::string& Version = "1.1",int Status = 200,const std::string& Description = "OK")
-    { respone += Version + ' ' + std::to_string(Status) + ' ' + Description + '\r\n'; }
+    { respone += Version + ' ' + std::to_string(Status) + ' ' + Description + "\r\n"; }
 
 
     // 在设置完内容后就不允许设置其他内容了
@@ -187,9 +187,9 @@ public:
     // 返回 http 报文字符串
     std::string encode() noexcept
     {
-        respone += "Content-Type:" + responeJson["Content-Type"].asString() + '\r\n';
-        respone += "Content-Length:" + responeJson["Content-Length"].asString() + '\r\n';
-        respone += '\r\n';
+        respone += "Content-Type:" + responeJson["Content-Type"].asString() + "\r\n";
+        respone += "Content-Length:" + responeJson["Content-Length"].asString() + "\r\n";
+        respone += "\r\n";
         respone += responeJson["Content"].asString();
         return respone;
     }

@@ -1,14 +1,16 @@
 #pragma once
 #include <memory>
 #include <functional>
+#include <jsoncpp/json/json.h>
+#include "threadpool.hpp"
 #include <sstream>
 #include <sys/epoll.h>
 #include "socket.hpp"
+#include "epoller.hpp"
 
 CJOJ_BEGIN
 
 class Connection;
-
 class __vb
 {
 public:
@@ -41,18 +43,12 @@ public:
     // 注册输入函数
     template <class Callable, class... Args>
     void enroll_recv(Callable &&F, Args &&...args) noexcept
-    {
-        auto __f = std::bind(std::forward<Callable>(F), std::forward<Args>(args)...);
-        _M_recv = std::move(__f);
-    }
+    { _M_recv = std::bind(std::forward<Callable>(F), std::forward<Args>(args)...); }
 
     // 注册输出函数
     template <class Callable, class... Args>
     void enroll_send(Callable &&F, Args &&...args) noexcept
-    {
-        auto __f = std::bind(std::forward<Callable>(F), std::forward<Args>(args)...);
-        _M_send = std::move(__f);
-    }
+    { _M_send = std::bind(std::forward<Callable>(F), std::forward<Args>(args)...); }
 
     void enableRead() noexcept
     {
@@ -79,10 +75,10 @@ public:
     }
 
     // 向输入缓冲区写入数据
-    void append_inbuff(const std::string &__s) const noexcept { _M_inbuff << __s; }
+    void append_inbuff(const std::string &__s) noexcept { _M_inbuff << __s; }
 
     // 向输出缓冲区写入数据
-    void append_outbuff(const std::string &__s) const noexcept 
+    void append_outbuff(const std::string &__s) noexcept 
     {
         _M_outbuff << __s;
         enableWrite(true);  // 有数据就启动写关注
@@ -95,6 +91,8 @@ public:
     void clearRequest() noexcept { _M_request.clear(); }
     bool isHandOver() noexcept { return _M_handOver; }
     void setHandOver(bool val) noexcept { _M_handOver = val; }
+    std::stringstream& inBuffer() noexcept { return _M_inbuff; }
+    std::stringstream& outBuffer() noexcept { return _M_outbuff; }
 
 
     void recv() { std::lock_guard<std::mutex> lg(_M_recvMt); _M_recv(); }

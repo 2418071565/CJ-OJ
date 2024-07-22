@@ -44,11 +44,6 @@ namespace handler
     void send(const std::shared_ptr<Connection>& __con)
     {
         std::string __bf;
-        std::stringstream& obf = __con->
-        for(;;)
-        {
-
-        }
     }
 }
 
