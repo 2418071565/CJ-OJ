@@ -60,7 +60,6 @@ public:
 
     void enableWrite(bool fg) noexcept 
     {
-       
         if(fg)
         {
             if(_M_events & EPOLLOUT)
@@ -70,7 +69,9 @@ public:
         }
         else 
         {
-
+            if(!(_M_events & EPOLLOUT))return;
+            _M_events &= ~EPOLLOUT;
+            _M_reactor->get_epoll()->modify(_M_sock->fd(),_M_events); 
         }
     }
 

@@ -21,8 +21,8 @@ class threadpool
     int max_task;
 
     // 同步
-    std::condition_variable p_cv // 生成者条件变量
-        , c_cv; // 消费者条件变量
+    std::condition_variable p_cv// 生成者条件变量
+                            , c_cv;// 消费者条件变量
     std::mutex  p_mut  // 生产者锁
         , c_mut; // 消费者锁
 
@@ -73,9 +73,11 @@ public:
             p_cv.wait(ul,
                 [this]() {return this->is_over or !(this->max_task == this->tasks.size()); }
             );
+
             if (is_over)return std::future<ret_type>();
 
             tasks.push_back([task]() {(*task)(); });
+            c_cv.notify_one();
         }
 
         return ret;

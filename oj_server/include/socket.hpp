@@ -122,6 +122,11 @@ public:
         return ::send(_M_fd,send_str.c_str(),send_str.size(),flags);
     }
 
+    virtual ssize_t send(const char* send_str,int size,int flags = 0)
+    {
+        return ::send(_M_fd,send_str,size,flags);
+    }
+
 
     virtual ssize_t recv(std::string& ret_str,int flags = 0)
     {

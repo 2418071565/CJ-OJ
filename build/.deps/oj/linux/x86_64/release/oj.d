@@ -1,7 +1,4 @@
 {
-    files = {
-        "build/.objs/oj/linux/x86_64/release/oj_server/src/Main.cc.o"
-    },
     values = {
         "/usr/bin/g++",
         {
@@ -10,5 +7,8 @@
             "-s",
             "-ljsoncpp"
         }
+    },
+    files = {
+        "build/.objs/oj/linux/x86_64/release/oj_server/src/Main.cc.o"
     }
 }

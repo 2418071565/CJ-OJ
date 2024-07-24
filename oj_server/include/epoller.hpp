@@ -73,7 +73,7 @@ public:
         int n = epoll_wait(_M_epfd, revents, maxevents, timeout); // 等待事件就绪
 
         if (n < 0)
-            return LOG(ERROR, "Epoll wait error with errno:%d\n", errno), -1;
+            return LOG(ERROR, "Epoll wait error with errno:%d  %s\n", errno,strerror(errno)), -1;
         return n;
     }
 

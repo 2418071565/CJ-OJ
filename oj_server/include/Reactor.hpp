@@ -47,6 +47,7 @@ public:
 
     Reactor()
         : is_running(false)
+        , _M_workers(new threadpool)
     { }
 
     void init(const std::string &ip = "0.0.0.0", uint16_t port = DEFAULT_PORT, int que_len = 5) noexcept
@@ -107,8 +108,7 @@ public:
     void dispatch()
     {
         int n = _M_epoll->wait(_M_ready_tasks, MAX_READY_TASKS, TIME_OUT);
-        if (n == 0)
-            return LOG(INFO, "Time out\n"), void();
+        if (n == 0) return;
         if (n < 0)
             return LOG(FATAL, "Epoller wait error\n"), void();
         for (int i = 0; i < n; ++i)
@@ -127,6 +127,7 @@ public:
     void start() noexcept(false)
     {
         is_running = true;
+        _M_workers->start();
         while (is_running)
         {
             dispatch();

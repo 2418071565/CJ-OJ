@@ -1,0 +1,10 @@
+{
+    errdata = "In file included from \27[01m\27[Koj_server/include/Handler.hpp:6\27[m\27[K,\
+                 from \27[01m\27[Koj_server/include/Reactor.hpp:6\27[m\27[K,\
+                 from \27[01m\27[Koj_server/src/Main.cc:1\27[m\27[K:\
+\27[01m\27[Koj_server/include/http.hpp:\27[m\27[K In static member function ‘\27[01m\27[Kstatic int CJ::httpRequest::decode(const std::shared_ptr<CJ::Connection>&)\27[m\27[K’:\
+\27[01m\27[Koj_server/include/http.hpp:90:5:\27[m\27[K \27[01;35m\27[Kwarning: \27[m\27[Kcontrol reaches end of non-void function [\27[01;35m\27[K-Wreturn-type\27[m\27[K]\
+   90 |     \27[01;35m\27[K}\27[m\27[K\
+      |     \27[01;35m\27[K^\27[m\27[K\
+"
+}
