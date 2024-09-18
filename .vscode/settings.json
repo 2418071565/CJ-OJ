@@ -59,5 +59,6 @@
         "thread": "cpp",
         "fstream": "cpp",
         "future": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

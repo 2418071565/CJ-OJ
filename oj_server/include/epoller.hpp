@@ -47,7 +47,7 @@ public:
         __ev.data.fd = fd;
 
         if (epoll_ctl(_M_epfd, EPOLL_CTL_MOD, fd, &__ev) < 0)
-            return LOG(ERROR, "Modify event of %d error with errno:%d", fd, errno), -1;
+            return LOG(ERROR, "Modify event of %d error with errno:%d\n", fd, errno), -1;
         return 0;
     }
 
@@ -59,13 +59,13 @@ public:
         __ev.data.fd = fd;
 
         if (epoll_ctl(_M_epfd, EPOLL_CTL_DEL, fd, &__ev) < 0)
-            return LOG(ERROR, "Del event of %d error with errno:%d", fd, errno), -1;
+            return LOG(ERROR, "Del event of %d error with errno:%d\n", fd, errno), -1;
         return 0;
     }
 
     /**
      *  @param revents 输出型参数，返回就绪事件
-     *  @param maxevents 要获取的最大就绪事件数、
+     *  @param maxevents 要获取的最大就绪事件数
      *  @param timeout 等待时间（ms），设为 -1 时表示阻塞等待。
      */
     int wait(epoll_event *revents, int maxevents, int timeout)

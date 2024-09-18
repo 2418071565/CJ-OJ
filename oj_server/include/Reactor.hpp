@@ -27,6 +27,7 @@ class Reactor : public __vb
     std::unordered_map<int, std::shared_ptr<Connection>> _M_conn;
     epoll_event _M_ready_tasks[MAX_READY_TASKS];
     bool is_running;
+    std::mutex mt_;
 
     // 创建守护进程
     void daemon()
@@ -89,6 +90,7 @@ public:
     // 添加链接
     void add_connection(const std::shared_ptr<Connection> &__con) noexcept
     {
+        std::lock_guard<std::mutex> lk(mt_);
         _M_epoll->add(__con->Sock()->fd(), __con->get_events());    // 添加连接到 epoller 中
         _M_conn[__con->Sock()->fd()] = __con;
     }
@@ -96,6 +98,7 @@ public:
     // 删除连接
     void del_connection(const std::shared_ptr<Connection> &__con) noexcept
     {
+        std::lock_guard<std::mutex> lk(mt_);
         _M_epoll->del(__con->Sock()->fd()); // 从 epoller 中删除对应连接
         _M_conn.erase(_M_conn.find(__con->Sock()->fd()));
     }

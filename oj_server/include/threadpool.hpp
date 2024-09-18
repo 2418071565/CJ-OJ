@@ -16,7 +16,7 @@ CJOJ_BEGIN
 class threadpool
 {
     std::vector<std::thread> workers;
-    std::deque<std::function<void()>> tasks;
+    std::queue<std::function<void()>> tasks;
     std::atomic<bool> is_running, is_over;
     int max_task;
 
@@ -35,12 +35,12 @@ public:
         , max_task(max)
     {
         for (int i = 0; i < threads; ++i) {
-            workers[i] = std::thread([this, threads]() {
+            workers.emplace_back(std::thread([this]() {
                 std::function<void()> task;
                 for (;;)
                 {
                     {
-                    std::unique_lock<std::mutex> ul(c_mut);
+                    std::unique_lock<std::mutex> ul(p_mut);
                     this->c_cv.wait(ul,
                         [this]() {return this->is_over or !this->tasks.empty(); });
                     if (this->is_over and this->tasks.empty())    // 线程池结束退出线程
@@ -48,11 +48,12 @@ public:
                     while (!is_running)std::this_thread::yield();   // 等待暂停结束
 
                     task = std::move(this->tasks.back());
-                    this->tasks.pop_back();
+                    this->tasks.pop();
+                    // p_cv.notify_one();
                     }
                     task();
                 }
-            });
+            }));
         }
     }
 
@@ -69,16 +70,16 @@ public:
 
         auto ret = task->get_future();
         {
-            std::unique_lock<std::mutex> ul(p_mut);
-            p_cv.wait(ul,
-                [this]() {return this->is_over or !(this->max_task == this->tasks.size()); }
-            );
+            std::lock_guard<std::mutex> ul(p_mut);
+            // p_cv.wait(ul,
+            //     [this]() {return this->is_over or !(this->max_task == this->tasks.size()); }
+            // );
 
             if (is_over)return std::future<ret_type>();
 
-            tasks.push_back([task]() {(*task)(); });
-            c_cv.notify_one();
+            tasks.emplace([task]() {(*task)(); });
         }
+        c_cv.notify_one();
 
         return ret;
     }

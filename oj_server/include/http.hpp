@@ -97,18 +97,7 @@ readContent:
     }
 };
 
-std::string webSite = R"(
-<!DOCTYPE html>
-<html lang="ch">
-<head>
-    <meta charset="UTF-8">
-    <title>cyb</title>
-</head>
-<body>
-    <h1><strong>你好!</strong></h1>
-</body>
-</html>
-)";
+std::string webSite = R"({"id":"1"})";
 
 
 // http 响应，用于构造响应报文
@@ -119,7 +108,10 @@ class httpRespone
 public:
     // 生成响应头
     httpRespone(const std::string& Version = "HTTP/1.1",int Status = 200,const std::string& Description = "OK")
-    { respone += Version + ' ' + std::to_string(Status) + ' ' + Description + "\r\n"; }
+    { 
+        respone += Version + ' ' + std::to_string(Status) + ' ' + Description + "\r\n"; 
+        responeJson["Connection"] = "close"; // 默认短连接
+    }
 
 
     // 在设置完内容后就不允许设置其他内容了
@@ -130,9 +122,11 @@ public:
         responeJson["Content"] = Content;
     }
 
-    void setKeepAlive() noexcept
+    // 设置长连接
+    void setKeepAlive(int timeout = -1) noexcept
     {
-        responeJson["Keep-Alive"] = "timeout=5,max=1000";
+        responeJson["Connection"] = "keep-alive";
+        if(timeout != -1) responeJson["Keep-Alive"] = "timeout=" + std::to_string(timeout);
     }
 
     // 返回 http 报文字符串

@@ -18,7 +18,7 @@ namespace handler
         for(;;)
         {
             ssize_t n = __con->Sock()->recv(__bf);
-            LOG(DEGUB,"Recv:\n%s\n",__bf.c_str());
+            // LOG(DEGUB,"Recv:\n%s\n",__bf.c_str());
             if(n < 0)
             {
                 if(errno == EAGAIN) // 
@@ -46,13 +46,13 @@ namespace handler
     {
         std::string __bf;
         std::stringstream& obf = __con->outBuffer();
-        char buff[2048];
         for(;!obf.eof();)
         {
+            char buff[2048] = { 0 };
             obf.read(buff,sizeof(buff));
 
             ssize_t n = __con->Sock()->send(buff,obf.gcount());
-            LOG(DEGUB,"send:\n%s\n",buff);
+            // LOG(DEGUB,"send:\n%s\n",buff);
             if(n > 0)
                 continue;
             else if(n == 0)
